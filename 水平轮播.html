@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			*{
+				margin: 0;
+				padding: 0;
+			}
+			ul{
+				list-style: none;
+			}
+			.slider{
+				width: 800px;
+				height: 400px;
+				/*border: 5px solid red;*/
+				position: relative; /*父相*/
+				overflow: hidden;
+			}
+			/*给ul设置绝对定位*/
+			.slider .list{
+				position: absolute; /*子绝*/
+				width: 4800px;    /*  4 1 2 3 4 1    前后各复制了一张图片，总共6张图片，6*800px = 4800px */
+			}
+			.slider .list .item{
+				width: 800px;
+				height: 400px;
+				float: left;
+			}
+			.slider .list .item img{
+				width: 800px;
+				height: 400px;
+				display: block;
+			}
+			
+			/*设置2个按钮*/
+			.slider .prev, .slider .next{
+				position: absolute;
+				top: 190px;
+			}
+			.slider .next{
+				right: 0;
+			}
+			
+			/*4个小方块*/
+			.slider .pagination{
+				position: relative; /*父相*/
+				/*摆位置*/
+				left: 338px;
+				top: 370px;	
+			}
+			.slider .pagination .bullet{
+				width: 20px;
+				height: 20px;
+				background-color: black;
+				float: left; /*左浮动*/
+				margin-left: 5px;  /*隔开小方块*/
+				/*border: 2px solid yellow;*/
+				cursor: pointer; /*鼠标经过-小手样式*/
+				color: white;
+				line-height: 20px;/*行高与高度一致*/
+				text-align: center;
+			}
+			
+			.slider  .pagination  .bullet.focus{   /* .focus事件 - 当元素获得焦点时（当通过鼠标点击选中元素或通过 tab 键定位到元素时），发生 focus 事件*/
+				background-color: hotpink;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="slider">
+			<ul class="list">
+				<li class="item"><img src="1.jpg" alt="" width="800" height="400"/></li>
+				<li class="item"><img src="2.jpg" alt="" width="800" height="400"/></li>
+				<li class="item"><img src="3.jpg" alt="" width="800" height="400"/></li>
+				<li class="item"><img src="4.jpg" alt="" width="800" height="400"/></li>
+			</ul>
+			<button class="prev">prev</button>
+			<button class="next">next</button>
+			<ul class="pagination">      <!-- pagination的意思：页码 -->
+				<li class="bullet focus">1</li>
+				<li class="bullet">2</li>
+				<li class="bullet">3</li>
+				<li class="bullet">4</li>
+			</ul>
+		</div>
+		<script type="text/javascript" src="animation.js"></script>  <!--导入外部js文件-->
+		<script type="text/javascript">
+			/*自调用函数*/
+			(function(){
+				var currentIndex;  //当前下标
+				var lis;    //ul下的所有li
+				var liWidth;  //ul下的li 的宽度
+				var len;   //ul下的li 的个数
+				var timerId;
+				
+				
+				init();  //调用
+				
+				function init(){
+					currentIndex = 1;
+					var li_1 = document.querySelector(".slider .list .item:first-of-type");
+					var copy_1 = li_1.cloneNode(true);  //复制第1张图片
+					var li_last = document.querySelector(".slider .list .item:last-of-type");
+					var copy_last = li_last.cloneNode(true);  //复制最后1张(第4张)图片
+					
+					var list = document.querySelector(".slider .list");
+					/*appendChild  - 1个参数*/
+					list.appendChild(copy_1);  //将第1张图片的复制图片 放到最后面                  1 2 3 4  -> 1 2 3 4 1
+					/*insertBefore  - 2个参数*/
+					list.insertBefore(copy_last, li_1);   //将最后1张图片的复制图片 放到最前面   1 2 3 4  -> 4 1 2 3 4 
+					//2部执行以后      (原来) 1 2 3 4   ->  (最终)  4 1 2 3 4 1          对应下标 则是 3 0 1 2 3 0
+					
+					lis = document.querySelectorAll(".list .item"); //获取所有
+					liWidth = lis[0].offsetWidth;  //单个宽度（随便取其中1个的宽度）
+					len = lis.length;
+					
+					list.style.width = liWidth * len + "px";
+					
+					/*left*/
+					list.style.left = - liWidth + "px";
+					
+					document.querySelector(".prev").onclick = function(){  //.prev
+						slidePrev();  //调用
+					}
+					document.querySelector(".next").onclick = function(){  //.next
+						slideNext();  //调用
+					}
+					
+					var bullets = document.querySelectorAll(".slider  .pagination .bullet");
+					for(var i=0; i<bullets.length; i++){
+						bullets[i].index = i;
+						bullets[i].onclick = function(){
+							currentIndex = this.index + 1;
+							slideTo(currentIndex);
+						}
+					}
+					
+					var slider1 = document.querySelector(".slider");
+					/*当鼠标移入整个区域内，停止自动轮播*/
+					slider1.onmouseover = function(){
+						stop(); //调用
+					}
+					/*当鼠标移出整个区域，自动轮播*/
+					slider1.onmouseout = function(){
+						auto(); //调用
+					}
+					auto();//调用(自动轮播)
+					
+				}
+				
+				
+				function slidePrev(){
+					currentIndex--;
+					slideTo(currentIndex); // 调用
+				}
+				function slideNext(){
+					currentIndex++;
+					slideTo(currentIndex); // 调用
+				}
+				
+				
+				function slideTo(index){   //传入参数index
+					var list = document.querySelector(".slider .list");
+					
+					if(index === len){
+						currentIndex = index = 2;
+						list.style.left = - liWidth + "px";
+					}
+					if(index === -1){
+						currentIndex = index = len - 3;
+						list.style.left = - (len - 2) * liWidth + "px";
+					}
+					
+					var focusIndex;
+					var bullets = document.querySelectorAll(".pagination .bullet");
+					if(index === 0){
+						focusIndex = bullets.length - 1;
+					}else if(index === len - 1){
+						focusIndex = 0;
+					}else{
+						focusIndex = index - 1;
+					}
+					
+					document.querySelector(".focus").className = "bullet";
+					bullets[focusIndex].className = "bullet focus";
+					
+					var left = - index * liWidth;
+					animate(list, {
+						left: left
+					})
+				}
+				
+				
+				function auto(){
+					clearInterval(timerId);
+					timerId = setInterval(function(){
+						slideNext();
+					}, 4000)
+				}
+				function stop(){
+					clearInterval(timerId);
+				}
+				
+			})()
+		</script>
+	</body>
+</html>
